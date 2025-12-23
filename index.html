@@ -13,10 +13,13 @@
       box-shadow: 0 18px 60px rgba(0,0,0,.55);
       background: #0b1020;
     }
+    /* ĐÃ ẨN HOÀN TOÀN DÒNG HƯỚNG DẪN */
+    .hint{ display:none; }
   </style>
 </head>
 <body>
-  <canvas id="c"></canvas>
+
+<canvas id="c"></canvas>
 
 <script>
 (() => {
@@ -40,10 +43,6 @@
   let paused = false;
   let styleMode = 0;
 
-  function rand(a,b){ return a + Math.random()*(b-a); }
-  function randi(a,b){ return Math.floor(rand(a,b+1)); }
-  function clamp(x,a,b){ return Math.max(a, Math.min(b,x)); }
-
   const tree = {
     baseY: 480,
     levels: 7,
@@ -52,6 +51,13 @@
     layerGap: 55
   };
 
+  const snow = [];
+  const bulbs = [];
+
+  function rand(a,b){ return a + Math.random()*(b-a); }
+  function randi(a,b){ return Math.floor(rand(a,b+1)); }
+  function clamp(x,a,b){ return Math.max(a, Math.min(b,x)); }
+
   function treeWidthAtY(y){
     const bottom = 520 - 40;
     const top = 140;
@@ -59,7 +65,6 @@
     return (1 - t) * 60 + t * tree.baseWidth;
   }
 
-  const snow = [];
   function resetSnow(){
     snow.length = 0;
     for (let i=0;i<220;i++){
@@ -74,7 +79,6 @@
     }
   }
 
-  const bulbs = [];
   function resetBulbs(){
     bulbs.length = 0;
     for (let i=0;i<80;i++){
@@ -90,73 +94,88 @@
     }
   }
 
-  resetSnow();
-  resetBulbs();
+  function resetAll(){
+    resetSnow();
+    resetBulbs();
+  }
+  resetAll();
 
   function drawBackground(){
     ctx.fillStyle = BG;
     ctx.fillRect(0,0,W,H);
-    ctx.fillStyle = "#101a35";
-    ctx.fillRect(0, 670, W, 30);
   }
 
-  function triPath(x1,y1,x2,y2,x3,y3){
-    ctx.beginPath();
-    ctx.moveTo(x1,y1);
-    ctx.lineTo(x2,y2);
-    ctx.lineTo(x3,y3);
-    ctx.closePath();
-  }
-
-  function drawTree(time){
+  function drawTree(){
     for (let i=0;i<tree.levels;i++){
       const w = tree.baseWidth - i*60;
       const y = tree.baseY - i*tree.layerGap;
-      triPath(W/2-w/2,y,W/2+w/2,y,W/2,y-tree.triH);
-      ctx.fillStyle = GREENS[i % GREENS.length];
+      ctx.fillStyle = GREENS[i%GREENS.length];
+      ctx.beginPath();
+      ctx.moveTo(W/2-w/2,y);
+      ctx.lineTo(W/2+w/2,y);
+      ctx.lineTo(W/2,y-tree.triH);
+      ctx.closePath();
       ctx.fill();
-      ctx.strokeStyle = TREE_OUTLINE;
-      ctx.stroke();
     }
-
-    ctx.fillStyle = TRUNK;
-    ctx.fillRect(W/2-45, tree.baseY+5, 90, 110);
   }
 
-  function drawGifts(){
-    const gifts = [
-      [-260,80,"#ff3b3b","#ffd43b"],
-      [-160,70,"#3bb3ff","#ffffff"],
-      [-60,90,"#ff55d9","#ffd43b"],
-      [70,75,"#7cff6b","#ffffff"]
-    ];
-    gifts.forEach(g=>{
-      ctx.fillStyle=g[2];
-      ctx.fillRect(W/2+g[0],610,g[1],g[1]);
-    });
+  function drawLights(time){
+    for (const b of bulbs){
+      const blink = (Math.floor(time*35)+b.phase)%12<6;
+      ctx.fillStyle = blink ? b.base : "#ffffff";
+      ctx.beginPath();
+      ctx.arc(b.x,b.y,b.size*0.6,0,Math.PI*2);
+      ctx.fill();
+    }
   }
 
   function drawSnow(){
     ctx.fillStyle = SNOW;
-    snow.forEach(f=>{
-      f.y+=f.vy;
-      if(f.y>H) f.y=-10;
+    for (const f of snow){
+      f.y += f.vy;
+      if (f.y > H){ f.y = -10; }
       ctx.beginPath();
       ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
       ctx.fill();
-    });
+    }
   }
 
-  function loop(){
+  function drawTextOverlay(){
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.beginPath();
+    ctx.roundRect(W/2-200, 20, 400, 90, 18);
+    ctx.fill();
+
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 28px Arial";
+    ctx.fillText("Merry Christmas! 🎄✨", W/2, 55);
+
+    ctx.fillStyle = "#cfe6ff";
+    ctx.font = "bold 22px Arial";
+    ctx.fillText("Vu Thu Trang 💖✨💫", W/2, 85);
+  }
+
+  function loop(t){
     drawBackground();
     drawTree();
-    drawGifts();
+    drawLights(t/1000);
     drawSnow();
+    drawTextOverlay();
     requestAnimationFrame(loop);
   }
+
+  document.addEventListener("keydown",(e)=>{
+    const k = e.key.toLowerCase();
+    if (k===" ") paused=!paused;
+    if (k==="s") styleMode=(styleMode+1)%2;
+    if (k==="r") resetAll();
+  });
 
   requestAnimationFrame(loop);
 })();
 </script>
+
 </body>
 </html>
